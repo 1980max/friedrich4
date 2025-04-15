@@ -18,7 +18,7 @@ module.exports = async (req, res) => {
 
   try {
     // API-Schlüssel abrufen
-    const API_KEY = process "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";
+    const API_KEY = process ";
     if (!API_KEY) {
       return res.status(500).json({ error: 'API-Schlüssel fehlt in den Umgebungsvariablen' });
     }

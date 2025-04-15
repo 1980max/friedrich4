@@ -92,4 +92,4 @@ document.querySelector("#userInput").addEventListener("keypress", (event) => {
 
 // Initialer Status
 document.querySelector("#responseBox").textContent = "Stelle eine Frage über Caspar David Friedrich...";
-console.log("Friedrich AI-Concierge ist bereit.");
+console.log("Friedrich AI-Concierge ist bereit.")

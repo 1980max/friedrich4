@@ -6,7 +6,7 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   
-  // OPTIONS-Anfragen beantworten (für CORS)
+  // OPTIONS-Anfragen beantworten
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -17,7 +17,7 @@ module.exports = async (req, res) => {
   }
 
   try {
-    // API-Schlüssel prüfen
+    // API-Schlüssel abrufen
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       return res.status(500).json({ error: 'API-Schlüssel fehlt in den Umgebungsvariablen' });
@@ -28,6 +28,19 @@ module.exports = async (req, res) => {
     
     if (!question) {
       return res.status(400).json({ error: 'Keine Frage übermittelt' });
+    }
+
+    // Sicherstellen, dass die Frage einen String ist
+    const sanitizedQuestion = String(question).trim();
+    
+    // Prüfen, ob die Frage leer ist
+    if (sanitizedQuestion.length === 0) {
+      return res.status(400).json({ error: 'Frage darf nicht leer sein' });
+    }
+    
+    // Prüfen, ob die Frage zu lang ist (OpenAI hat Längenbeschränkungen)
+    if (sanitizedQuestion.length > 4000) {
+      return res.status(400).json({ error: 'Frage ist zu lang (max. 4000 Zeichen)' });
     }
 
     // Anfrage an OpenAI
@@ -47,39 +60,38 @@ module.exports = async (req, res) => {
           },
           {
             role: "user",
-            content: question
+            content: sanitizedQuestion
           }
         ],
+        max_tokens: 500, // Verhindert zu lange Antworten
         temperature: 0.7
       },
-      timeout: 10000 // 10 Sekunden Timeout
+      timeout: 15000 // 15 Sekunden Timeout
     });
 
-    // Antwort zurückgeben
+    // Erfolgreiche Antwort
     const answer = response.data.choices[0].message.content;
     return res.status(200).json({ answer });
 
   } catch (error) {
-    console.error('Fehler:', error.response?.data || error.message);
+    console.error('OpenAI API Fehler:', error.response?.data || error.message);
     
-    // Bei Axios-Fehlern
-    if (error.response) {
-      // Der Server hat mit einem Fehlerstatuscode geantwortet
+    // Spezifische Fehlermeldungen
+    if (error.response?.data?.error?.message) {
+      return res.status(500).json({
+        error: 'Fehler von OpenAI: ' + error.response.data.error.message
+      });
+    } else if (error.response) {
       return res.status(error.response.status).json({
-        error: 'OpenAI API-Fehler',
-        details: error.response.data
+        error: `Fehler vom API-Server (${error.response.status})`
       });
     } else if (error.request) {
-      // Die Anfrage wurde gestellt, aber keine Antwort erhalten
       return res.status(500).json({
-        error: 'Keine Antwort von OpenAI erhalten',
-        details: 'Timeout oder Netzwerkproblem'
+        error: 'Keine Antwort vom API-Server erhalten'
       });
     } else {
-      // Beim Einrichten der Anfrage ist ein Fehler aufgetreten
       return res.status(500).json({
-        error: 'Anfrage an OpenAI konnte nicht erstellt werden',
-        details: error.message
+        error: 'Fehler bei der Anfrage: ' + error.message
       });
     }
   }

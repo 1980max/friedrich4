@@ -18,8 +18,8 @@ module.exports = async (req, res) => {
 
   try {
     // API-Schlüssel abrufen
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
+    const API_KEY = process "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";
+    if (!API_KEY) {
       return res.status(500).json({ error: 'API-Schlüssel fehlt in den Umgebungsvariablen' });
     }
 
@@ -49,7 +49,7 @@ module.exports = async (req, res) => {
       url: 'https://api.openai.com/v1/chat/completions',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Authorization': `Bearer ${API_KEY}`
       },
       data: {
         model: "gpt-3.5-turbo",
